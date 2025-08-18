@@ -8,6 +8,10 @@ import engine.label.Label;
 import engine.variable.Variable;
 
 public final class AssignmentInstruction extends AbstractInstruction {
+    public Variable getFrom() {
+        return from;
+    }
+
     private final Variable from;
     public AssignmentInstruction(Label lineLabel, Variable to, Variable from) {
         super(lineLabel, to, 4, InstructionKind.SYNTHETIC);

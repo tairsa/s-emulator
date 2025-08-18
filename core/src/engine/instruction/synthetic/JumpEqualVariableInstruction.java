@@ -2,12 +2,17 @@ package engine.instruction.synthetic;
 
 import engine.execution.ExecutionContext;
 import engine.instruction.AbstractInstruction;
+import engine.instruction.HasTarget;
 import engine.instruction.InstructionKind;
 import engine.label.FixedLabel;
 import engine.label.Label;
 import engine.variable.Variable;
 
-public final class JumpEqualVariableInstruction extends AbstractInstruction {
+public final class JumpEqualVariableInstruction extends AbstractInstruction implements HasTarget {
+    public Variable getOther() {
+        return other;
+    }
+
     private final Variable other;
     private final Label target;
     public JumpEqualVariableInstruction(Label lineLabel, Variable v, Variable other, Label target) {
@@ -15,6 +20,8 @@ public final class JumpEqualVariableInstruction extends AbstractInstruction {
         this.other = other;
         this.target = target == null ? FixedLabel.EXIT : target;
     }
+
+    @Override public Label target() { return target; }
     @Override public Label execute(ExecutionContext ctx) {
         long a = ctx.get(variable());
         long b = ctx.get(other);

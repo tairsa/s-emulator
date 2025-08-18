@@ -2,12 +2,13 @@ package engine.instruction.synthetic;
 
 import engine.execution.ExecutionContext;
 import engine.instruction.AbstractInstruction;
+import engine.instruction.HasTarget;
 import engine.instruction.InstructionKind;
 import engine.label.FixedLabel;
 import engine.label.Label;
 import engine.variable.Variable;
 
-public final class JumpEqualConstantInstruction extends AbstractInstruction {
+public final class JumpEqualConstantInstruction extends AbstractInstruction implements HasTarget {
     private final long constant;
     private final Label target;
     public JumpEqualConstantInstruction(Label lineLabel, Variable v, long constant, Label target) {
@@ -15,6 +16,7 @@ public final class JumpEqualConstantInstruction extends AbstractInstruction {
         this.constant = Math.max(0, constant);
         this.target = target == null ? FixedLabel.EXIT : target;
     }
+    @Override public Label target() { return target; }
     @Override public Label execute(ExecutionContext ctx) {
         long val = ctx.get(variable());
         ctx.addCycles(cycles);

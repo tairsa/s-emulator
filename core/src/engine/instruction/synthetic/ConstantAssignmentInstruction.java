@@ -8,6 +8,10 @@ import engine.label.Label;
 import engine.variable.Variable;
 
 public final class ConstantAssignmentInstruction extends AbstractInstruction {
+    public long getConstant() {
+        return constant;
+    }
+
     private final long constant;
     public ConstantAssignmentInstruction(Label lineLabel, Variable to, long constant) {
         super(lineLabel, to, 2, InstructionKind.SYNTHETIC);
