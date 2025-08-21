@@ -9,6 +9,10 @@ import engine.label.Label;
 import engine.variable.Variable;
 
 public final class JumpEqualConstantInstruction extends AbstractInstruction implements HasTarget {
+    public long getConstant() {
+        return constant;
+    }
+
     private final long constant;
     private final Label target;
     public JumpEqualConstantInstruction(Label lineLabel, Variable v, long constant, Label target) {

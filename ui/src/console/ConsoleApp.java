@@ -23,6 +23,8 @@ public final class ConsoleApp {
     private SProgram program;
 
     private final List<HistoryItem> history = new ArrayList<>();
+    private final engine.execution.SimpleProgramExpander expander = new engine.execution.SimpleProgramExpander();
+
 
     private static final class HistoryItem {
         final int id;
@@ -64,6 +66,7 @@ public final class ConsoleApp {
             } catch (Exception ex) {
                 System.out.println("Error: " + ex.getMessage());
             }
+
         }
     }
 
@@ -83,17 +86,26 @@ public final class ConsoleApp {
 
     private void doExpand(Scanner sc) {
         if (program == null) { System.out.println("No program loaded."); return; }
-        System.out.print("Enter degree (0..): ");
+
+        int maxDeg = maxExpansionDegree(program);
+        if (maxDeg == 0) {
+            System.out.println("Nothing to expand (no supported synthetic instructions).");
+            return;
+        }
+
+        System.out.println("Max expansion degree: " + maxDeg);
+        System.out.print("Enter degree (1.." + maxDeg + "): ");
         int degree = readInt(sc);
+        if (degree < 1) degree = 1;
+        if (degree > maxDeg) {
+            System.out.println("Requested degree exceeds maximum; using " + maxDeg + ".");
+            degree = maxDeg;
+        }
 
-        // בשלב זה, לפני Expander אמיתי, נציג את אותה תוכנית כ-"מורחבת"
-        System.out.println("Expanded program (degree " + degree + "):");
-        printProgram(program);
+        SProgram expanded = expandToDegree(program, degree);
 
-        // כשתממשי Expander:
-        // ProgramExpander expander = new SimpleExpander();
-        // SProgram expanded = expander.expand(program, degree);
-        // printProgram(expanded);
+        System.out.println("=== Expanded program (degree " + degree + ") ===");
+        printProgramExpand(expanded);
     }
 
     private void printProgram(SProgram prog) {
@@ -102,6 +114,7 @@ public final class ConsoleApp {
         var inputs = collectInputsInOrder(prog);
         var labels = collectLabelsInOrder(prog);
 
+        System.out.println("Program: " + prog.name());
         System.out.println("Inputs used: " + (inputs.isEmpty() ? "-" : String.join(", ", inputs)));
         System.out.println("Labels used: " + (labels.isEmpty() ? "-" : String.join(", ", labels)));
 
@@ -115,7 +128,68 @@ public final class ConsoleApp {
                     i+1, bOrS, labelBox, ins.render(), ins.cycles());
             System.out.println(line);
         }
-//        System.out.println("Total static cycles: " + prog.totalCycles());
+    }
+    private void printProgramExpand(SProgram prog) {
+        var list = prog.instructions();
+        for (int i = 0; i < list.size(); i++) {
+            SInstruction ins = list.get(i);
+            String bOrS = (ins.kind() == InstructionKind.BASIC) ? "B" : "S";
+
+            // אם תרצי בלי תיבת התווית לגמרי, ראי "אופציה בלי תיבות" בהמשך
+            String label = (ins.lineLabel() == null || ins.lineLabel() == FixedLabel.EMPTY) ? "" : ins.lineLabel().labelName();
+            String labelBox = String.format("[ %-5s ]", label);
+
+            String line = String.format("#%d (%s) %s %s (%d)",
+                    i + 1, bOrS, labelBox, ins.render(), ins.cycles());
+
+            // שרשור <<< (אם לא בנית lineage ב-Expander, זה פשוט יחזיר רשימה ריקה)
+            var chain = expander.lineageOf(ins);
+            if (chain != null && !chain.isEmpty()) {
+                StringBuilder sb = new StringBuilder(line);
+                for (var frame : chain) {
+                    String lb = (frame.label == null || frame.label.isEmpty()) ? "" : frame.label;
+                    String box = String.format("[ %-5s ]", lb);
+                    sb.append(" <<< ")
+                            .append(String.format("#%d (%c) %s %s (%d)",
+                                    frame.id, frame.kind, box, frame.text, frame.cycles));
+                }
+                System.out.println(sb);
+            } else {
+                System.out.println(line);
+            }
+        }
+    }
+
+
+
+    private static boolean isSupportedSynthetic(SInstruction ins) {
+        return ins instanceof engine.instruction.synthetic.ZeroVariableInstruction
+                || ins instanceof engine.instruction.synthetic.ConstantAssignmentInstruction
+                || ins instanceof engine.instruction.synthetic.GotoLabelInstruction
+                || ins instanceof engine.instruction.synthetic.JumpZeroInstruction
+                || ins instanceof engine.instruction.synthetic.AssignmentInstruction
+                || ins instanceof engine.instruction.synthetic.JumpEqualConstantInstruction
+                || ins instanceof engine.instruction.synthetic.JumpEqualVariableInstruction
+                ;
+    }
+    private static boolean hasExpandable(SProgram p) {
+        for (SInstruction ins : p.instructions()) {
+            if (ins.kind() == InstructionKind.SYNTHETIC) return true; // הכי בטוח: כל סינטטי נחשב להרחבה
+        }
+        return false;
+    }
+    // כמה דרגות באמת צריך כדי לנקות הכול
+    private int maxExpansionDegree(SProgram p) {
+        // נבדוק דרגות עולות; 6 זה תקרה נדיבה לתרגיל הזה
+        for (int d = 1; d <= 6; d++) {
+            SProgram cand = expander.expand(p, d); // קריאה אחת שמבצעת d צעדים רקורסיביים
+            if (!hasExpandable(cand)) return d;
+        }
+        return 6;
+    }
+
+    private SProgram expandToDegree(SProgram p, int degree) {
+        return (degree <= 0) ? p : expander.expand(p, degree);
     }
 
     private static java.util.List<String> collectInputsInOrder(SProgram prog) {
@@ -156,6 +230,8 @@ public final class ConsoleApp {
         return new java.util.ArrayList<>(seen);
     }
 
+
+
     private static boolean programUsesExit(SProgram prog) {
         for (SInstruction ins : prog.instructions()) {
             Label tgt = jumpTargetOf(ins);          // יעד קפיצה אם יש
@@ -176,15 +252,21 @@ public final class ConsoleApp {
 
     private void doRun(Scanner sc) {
         if (program == null) { System.out.println("No program loaded."); return; }
+
         System.out.print("Enter inputs (comma separated, e.g. 3,0,5): ");
         String line = sc.nextLine().trim();
         Long[] inputs = parseInputs(line);
 
-        // כרגע אין שימוש בדרגה בריצה, אבל אם תרצי לאסוף אותה להיסטוריה – נשאל:
-        System.out.print("Enter degree for run (0..): ");
+        // ריצה על דרגת הרחבה שהמשתמש בוחר
+        int maxDeg = maxExpansionDegree(program);
+        System.out.print("Enter degree for run (0.." + maxDeg + ", 0 = no expansion): ");
         int degree = readInt(sc);
+        if (degree < 0) degree = 0;
+        if (degree > maxDeg) degree = maxDeg;
 
-        ProgramExecutor exec = new ProgramExecutorImpl(program);
+        SProgram toRun = (degree == 0) ? program : expandToDegree(program, degree);
+
+        ProgramExecutor exec = new ProgramExecutorImpl(toRun);
         long y = exec.run(inputs);
         long cycles = exec.cycles();
 
@@ -192,13 +274,8 @@ public final class ConsoleApp {
         System.out.println("y = " + y);
         System.out.println("cycles = " + cycles);
 
-        // שמירה להיסטוריה
         history.add(new HistoryItem(
-                history.size() + 1,
-                degree,
-                toList(inputs),
-                y,
-                cycles
+                history.size() + 1, degree, toList(inputs), y, cycles
         ));
     }
 

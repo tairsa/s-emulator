@@ -14,9 +14,6 @@ public final class NeutralInstruction extends AbstractInstruction {
         return FixedLabel.EMPTY;
     }
 
-    // ← הוסיפי את זה:
-    public NeutralInstruction(Label lineLabel) {
-        this(lineLabel, null);
-    }
+
     @Override public String render() { return variable().name() + " <- " + variable().name(); }
 }
