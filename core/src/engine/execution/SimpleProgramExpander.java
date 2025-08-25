@@ -88,14 +88,12 @@ public final class SimpleProgramExpander implements ProgramExpander {
                         }
                     }
                 }
-                // === NEW: דאגה לרשימה ניתנת לשינוי ===
                 if (step == null) {
                     step = new ArrayList<>();                 // ריקה ומודיפבילית
                 } else {
                     step = new ArrayList<>(step);             // להפוך כל מה שחזר ל־ArrayList
                     step.removeIf(Objects::isNull);           // ניקוי בטיחותי
                 }
-                // === END NEW ===
 
                 if (step.isEmpty()) {
                     next.add(ins);

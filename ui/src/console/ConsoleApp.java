@@ -2,8 +2,6 @@ package console;
 
 import engine.execution.ProgramExecutor;
 import engine.execution.ProgramExecutorImpl;
-import engine.execution.ProgramExpander;
-import engine.execution.SimpleProgramExpander;
 import engine.instruction.HasTarget;
 import engine.instruction.InstructionKind;
 import engine.instruction.SInstruction;
@@ -19,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 
 public final class ConsoleApp {
@@ -84,6 +83,7 @@ public final class ConsoleApp {
         String p = sc.nextLine().trim();
         ProgramParser parser = new XmlProgramParser();
         program = parser.parse(Path.of(p));
+        history.clear();
         System.out.println("Program loaded: " + program.name());
     }
 
@@ -261,9 +261,6 @@ public final class ConsoleApp {
     private void doRun(Scanner sc) {
         if (program == null) { System.out.println("No program loaded."); return; }
 
-        System.out.print("Enter inputs (comma separated, e.g. 3,0,5): ");
-        String line = sc.nextLine().trim();
-        Long[] inputs = parseInputs(line);
 
         // ריצה על דרגת הרחבה שהמשתמש בוחר
         int maxDeg = maxExpansionDegree(program);
@@ -274,12 +271,28 @@ public final class ConsoleApp {
 
         SProgram toRun = (degree == 0) ? program : expandToDegree(program, degree);
 
+        List<String> xsOrder = collectInputsInOrder(program);
+        // הצגת אילו x נדרשים ובאיזה סדר
+        String xsPrompt = xsOrder.isEmpty()
+                ? "x1..xn" // fallback
+                : xsOrder.stream().collect(Collectors.joining(", "));
+
+        System.out.println("Program's inputs: " + xsPrompt );
+        System.out.print("Enter inputs (comma separated, e.g. 3,0,5): ");
+        String line = sc.nextLine().trim();
+        Long[] inputs = parseInputs(line);
+
         ProgramExecutor exec = new ProgramExecutorImpl(toRun);
         long y = exec.run(inputs);
         long cycles = exec.cycles();
+        System.out.println("=== Program Running ===");
+        printProgramExpand(program);
+
 
         System.out.println("=== Result ===");
         System.out.println("y = " + y);
+        System.out.println("=== Program's Variables ===");
+        exec.lastVariablesOrdered().forEach((k,v) -> System.out.println(k + " = " + v));
         System.out.println("cycles = " + cycles);
 
         history.add(new HistoryItem(
@@ -287,12 +300,12 @@ public final class ConsoleApp {
         ));
     }
 
+
     // ======== חדש: History ========
     private void doHistory() {
         if (history.isEmpty()) { System.out.println("(No runs yet.)"); return; }
-        System.out.println("# | degree | inputs | y | cycles");
         for (HistoryItem h : history) {
-            System.out.printf("%d | %d | %s | %d | %d%n", h.id, h.degree, h.inputs, h.y, h.cycles);
+            System.out.printf("#%d | degree:%d | inputs:%s | y:%d | cycles:%d%n", h.id, h.degree, h.inputs, h.y, h.cycles);
         }
     }
 

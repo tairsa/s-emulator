@@ -8,14 +8,12 @@ import engine.program.SProgram;
 import engine.variable.Variable;
 import engine.variable.VariableType;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public final class ExecutionContext {
     private final Map<Variable, Long> values = new HashMap<>();
     private final Map<String, Integer> labelToIndex = new HashMap<>();
+    private final List<Long> providedInputs = new ArrayList<>();   // ← חדש
     private int ip;
     private long cycles;
 
@@ -27,9 +25,13 @@ public final class ExecutionContext {
         // x_i from inputs (negative → 0)
         for (int i = 0; i < inputs.length; i++) {
             long v = inputs[i] == null ? 0L : Math.max(0L, inputs[i]);
+            providedInputs.add(v);
             values.put(new Variable("x" + (i + 1), VariableType.INPUT), v);
         }
         // z? → 0 on first access (lazy via get)
+    }
+    public List<Long> providedInputs() {
+        return java.util.Collections.unmodifiableList(providedInputs);
     }
 
     public void buildLabelIndex(SProgram program) {
