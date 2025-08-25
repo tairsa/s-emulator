@@ -2,6 +2,8 @@ package console;
 
 import engine.execution.ProgramExecutor;
 import engine.execution.ProgramExecutorImpl;
+import engine.execution.ProgramExpander;
+import engine.execution.SimpleProgramExpander;
 import engine.instruction.HasTarget;
 import engine.instruction.InstructionKind;
 import engine.instruction.SInstruction;
@@ -41,6 +43,8 @@ public final class ConsoleApp {
         new ConsoleApp().run();
     }
 
+
+
     private void run() {
         Scanner sc = new Scanner(System.in);
         while (true) {
@@ -63,9 +67,14 @@ public final class ConsoleApp {
                     case "6" -> { System.out.println("Bye!"); return; }
                     default -> System.out.println("Invalid choice.");
                 }
-            } catch (Exception ex) {
-                System.out.println("Error: " + ex.getMessage());
-            }
+//            } catch (Exception ex) {
+//                System.out.println("Error: " + ex.getMessage());
+//            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getClass().getName() +
+                    (e.getMessage() == null ? " <no message>" : " - " + e.getMessage()));
+            e.printStackTrace(System.out); // חשוב!
+        }
 
         }
     }
@@ -142,7 +151,6 @@ public final class ConsoleApp {
             String line = String.format("#%d (%s) %s %s (%d)",
                     i + 1, bOrS, labelBox, ins.render(), ins.cycles());
 
-            // שרשור <<< (אם לא בנית lineage ב-Expander, זה פשוט יחזיר רשימה ריקה)
             var chain = expander.lineageOf(ins);
             if (chain != null && !chain.isEmpty()) {
                 StringBuilder sb = new StringBuilder(line);
