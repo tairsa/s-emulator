@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="angus-activation">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../jaxb-ri-4.0.5/mod/angus-activation.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

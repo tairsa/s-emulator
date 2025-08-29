@@ -1,4 +1,4 @@
-package engine;
+package engine.instruction;
 
 public enum InstructionType
 {
