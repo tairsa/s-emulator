@@ -11,7 +11,7 @@ import java.nio.file.Path;
 import java.util.Scanner;
 
 public final class LoadStateCommand implements ConsoleCommand {
-    @Override public String key()   { return "8"; }
+    @Override public String key()   { return "7"; }
     @Override public String label() { return "Load saved system"; }
 
     @Override

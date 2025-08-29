@@ -33,9 +33,9 @@ public final class ConsoleApp {
                 new ExpandCommand(),
                 new RunCommand(),
                 new HistoryCommand(),
-                new ExitCommand(),
                 new SaveStateCommand(),
-                new LoadStateCommand()
+                new LoadStateCommand(),
+                new ExitCommand()
         );
     }
 

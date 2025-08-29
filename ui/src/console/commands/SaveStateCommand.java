@@ -9,7 +9,7 @@ import java.nio.file.Path;
 import java.util.Scanner;
 
 public final class SaveStateCommand implements ConsoleCommand {
-    @Override public String key()   { return "7"; }                // מספר תפריט פנוי
+    @Override public String key()   { return "6"; }                // מספר תפריט פנוי
     @Override public String label() { return "Save system state"; }
 
     @Override
